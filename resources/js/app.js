@@ -1,12 +1,13 @@
 import './bootstrap';
 import { createApp } from 'vue';
-import { Core, daygrid, InteractionPlugin, TimeGridPlugin } from '@fullcalendar/vue3';
-import '@fullcalendar/common/main.css';
-import '@fullcalendar/daygrid/index.js';
-import '@fullcalendar/timegrid/index.js';
+import Calendar from './components/Calendar.vue';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
 
-const app = createApp(App);
-app.use(createDayGridPlugin());
-app.use(createInteractionPlugin());
-app.use(createTimeGridPlugin());
-app.mount('#app');
+
+createApp({
+    components: {
+        Calendar
+    },
+}).mount('#app');

@@ -1,33 +1,30 @@
 <template>
-  <div>
-    <FullCalendar :options="calendarOptions"></FullCalendar>
-  </div>
+  <FullCalendar :options="calendarOptions" />
 </template>
 
 <script>
-import { ref } from 'vue';
+import FullCalendar from '@fullcalendar/vue3';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 
 export default {
-  setup() {
-    const calendarOptions = ref({
-      locale: 'es',
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay',
-      },
-      initialView: 'dayGridMonth',
-      events: [
-        // Aquí puedes cargar las citas desde tu API o base de datos
-        // por ejemplo: { title: 'Cita 1', start: '2022-01-01' },
-        // ...
-      ],
-      // Aquí puedes configurar más opciones y eventos según tus necesidades
-    });
-
+  components: {
+    FullCalendar,
+  },
+  data() {
     return {
-      calendarOptions,
+      calendarOptions: {
+        plugins: [dayGridPlugin, interactionPlugin],
+        initialView: 'dayGridMonth',
+        events: this.fetchEvents, // Una función para obtener las citas del backend
+        // Otras opciones del calendario
+      },
     };
+  },
+  methods: {
+    fetchEvents() {
+      // Lógica para obtener las citas del backend
+    },
   },
 };
 </script>
