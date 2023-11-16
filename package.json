@@ -16,7 +16,6 @@
         "vite": "^4.0.0"
     },
     "dependencies": {
-        "@fullcalendar/vue3": "^6.1.9",
         "@vitejs/plugin-vue": "^4.4.1",
         "autoprefixer": "^10.4.16",
         "babel-preset-stage-2": "^6.24.1",
