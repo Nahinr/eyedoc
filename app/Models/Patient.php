@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Patient extends Model
 {
     public function appointments(){
-        return $this->hasMany('App\Models\Appointment');
+        return $this->hasMany(Appointment::class);
     }
     use HasFactory;
 }

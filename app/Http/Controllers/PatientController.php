@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PatientController extends Controller
@@ -14,6 +15,13 @@ class PatientController extends Controller
         $patients = Patient::all();
 
         return view('patients', compact('patients'));
+    }
+
+    //para el modal de calendario
+
+    public function index(): JsonResponse{
+        $patients = Patient::all();
+        return response()->json($patients);
     }
 
     public function create(){
@@ -50,5 +58,6 @@ class PatientController extends Controller
 
          return redirect('/patients')->with('success', 'Paciente creado correctamente');
          
+
     }
 }

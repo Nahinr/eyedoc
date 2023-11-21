@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use Illuminate\Http\Request;
+use Laravel\Ui\Presets\React;
+use Illuminate\Support\Carbon;
+use Illuminate\Http\JsonResponse;
 
 class AppointmentController extends Controller
 {
@@ -15,72 +18,33 @@ class AppointmentController extends Controller
         return view('Appointments.appointmentsIndex');
     }
 
-    public function calendarEvents(Request $request)
+    public function store (Request $request): JsonResponse
     {
-     $eventList = Appointment::get(['id', 'title', 'start', 'end']);
-     return response()->json(["My events"=>$eventList]);
-    }
+        // dd($request->all());
 
-    public function filter(Request $request)
-    {
-        return Appointment::whereBetween('start',[$request->start, $request->end])
-        ->with('patient:id,nombre_completo,identidad')
-        ->get();    
-        // if (auth()->check()){
-           
-        // }
-        // else {
-        //     return Appointment::whereBetween('start',[$request->start, $request->end])
-        //     ->where('patient_id', auth()->user()->id)
-        //     ->get();
-        // }
-    }
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'title' => 'required|string',
+            'description' => 'string',
+            'start' => 'required |date',
+            'end' => 'required |date|after:start',
+        ]);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $patientid = $request->patient_id;
+        $start = Carbon::parse($request->input('start'));
+        $end = Carbon::parse($request->input('end'));
 
-        $appointment = new Appointment();
-        $appointment->title = $request->input('title');
-        $appointment->description = $request->input('description');
-        $appointment->start = $request->input('start');
-        $appointment->end = $request->input('end');
-        $appointment->patient_id = $patientid;
+        $apointment = Appointment::create([
+            'patient_id' => $request->input('patient_id'),
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'start' => $start,
+            'end' => $end,
+        ]);
 
-        $appointment->save();
+        $apointment->load('patient');
 
-        return redirect('/appointments')->with('success', 'Cita creada con exito!');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function update (Request $request, $id)
-    {
-        $appointment = Appointment::findOrFail($id);
-    
-        $appointment->title = $request->title;
-        $appointment->description = $request->description;
-        $appointment->start = $request->start;
-        $appointment->end = $request->end;
-    
-        $appointment->save();
-    
-        return redirect('/appointments')->with('success', 'Cita actualizada con éxito!');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Request $request, $id)
-    {
-        $appointment = Appointment::findOrFail($id);
-    
-        $appointment->delete();
-    
-        return redirect('/appointments')->with('success', 'Cita eliminada con éxito!');
+        return response()->json($apointment,201);
     }
 }
+
+    

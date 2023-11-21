@@ -10,7 +10,7 @@ class Appointment extends Model
     protected $guarded = ['id'];
 
     public function patient(){
-        return $this->belongsTo('App\Patient');
+        return $this->belongsTo(Patient::class);
     }
     
     use HasFactory;
