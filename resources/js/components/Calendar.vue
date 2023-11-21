@@ -1,33 +1,36 @@
 <template>
   <FullCalendar :options="calendarOptions" />
-  <button @click="openEventForm">Crear Cita</button>
+  <!-- <button @click="openEventForm">Crear Cita</button> -->
   <div>
-    <!-- Formulario/modal de creación de eventos -->
-    <div v-if="showEventForm">
-      <label for="patient">Paciente:</label>
-      <select v-model="selectedPatient">
-        <!-- Llena la lista de pacientes desde tu backend -->
-        <option v-for="patient in patients" :key="patient.id" :value="patient.id">{{ patient.nombre_completo }}</option>
-      </select>
+    <!-- <div v-if="showEventForm"> -->
+      <div class="modal-container" :class="{ 'show': isModalVisible }">
+        <vue-final-modal name="event-form-modal">
 
-      <label for="title">Título:</label>
-      <input v-model="eventTitle" type="text" placeholder="Título del evento">
+            <label for="patient">Paciente:</label>
+            <select v-model="selectedPatient">
+              <!-- Llena la lista de pacientes desde tu backend -->
+              <option v-for="patient in patients" :key="patient.id" :value="patient.id">{{ patient.nombre_completo }}</option>
+            </select>
 
-      <label for="description">Descripción:</label>
-      <textarea v-model="eventDescription" placeholder="Descripción del evento"></textarea>
+            <label for="title">Título:</label>
+            <input v-model="eventTitle" type="text" placeholder="Título">
 
-      <label for="date">Inicio</label>
-      <input v-model="eventStartDate" type="datetime-local">
+            <label for="description">Descripción:</label>
+            <textarea v-model="eventDescription" placeholder="Descripción"></textarea>
 
-      <label for="date">Fin</label>
-      <input v-model="eventEndDate" type="datetime-local">
-     
+            <label for="date">Inicio</label>
+            <input v-model="eventStartDate" type="datetime-local">
 
-      <!-- Otros campos del formulario -->
+            <label for="date">Fin</label>
+            <input v-model="eventEndDate" type="datetime-local">
 
-      <button @click="createEvent">Crear Evento</button>
+            <button @click="createEvent">Crear Evento</button>
+            <button @click="closeModal">Cerrar</button>
+
+        </vue-final-modal>
     </div>
-  </div>
+   </div>    
+  <!-- </div> -->
 </template>
 
 <script>
@@ -41,6 +44,7 @@ export default {
   components: {
     FullCalendar,
   },
+
   data() {
     return {
       calendarOptions: {
@@ -59,16 +63,28 @@ export default {
       selectedPatient: null,
       eventTitle: '',
       patients: [],
+      isModalVisible: false
     };
   },
 
   mounted(){
     this.fetchPatients();
+    this.calendarOptions.dateClick = this.handleDateClick;
   },
-  methods: {
+  methods: {   
+    handleDateClick() {
+      this.selectedPatient = null;
+      this.eventTitle = '';
+      this.eventDescription = '';
+      this.eventStartDate = '';
+      this.eventEndDate = '';
+      // this.showEventForm = true;
+
+      this.isModalVisible= true;
+    },
 
     fetchPatients() {
-      axios.get('/patients')
+      axios.get('/patientsIndex')
         .then(response => {
           console.log('Respuesta de pacientes:', response.data);
           this.patients = response.data;
@@ -95,14 +111,33 @@ export default {
         .then(response => {
           console.log('Evento creado con éxito:', response.data);
           this.showEventForm = false; // Cerrar el formulario después de crear el evento
+          this.isModalVisible = false;
         })
         .catch(error => {
           console.error('Error al crear el evento:', error);
         });
    },
     fetchEvents() {
-      // Lógica para obtener las citas del backend
+  
     },
+    closeModal() {
+      this.isModalVisible = false;
+    }
   },
 };
 </script>
+
+<style>
+  .modal-container {
+  position: fixed; /* O ajusta según sea necesario */
+  top: 50%; /* Ajusta según sea necesario */
+  left: 50%; /* Ajusta según sea necesario */
+  transform: translate(-50%, -50%); /* Centra el modal */
+  z-index: 9999; /* Ajusta aquí sea necesario */
+  display: none;
+  }
+
+  .modal-container.show {
+  display: block;
+  }
+</style>
