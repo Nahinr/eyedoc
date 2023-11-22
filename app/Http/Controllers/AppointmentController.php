@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Laravel\Ui\Presets\React;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
@@ -45,6 +46,24 @@ class AppointmentController extends Controller
 
         return response()->json($apointment,201);
     }
+
+    public function calendarEvents(Request $request)
+    {
+       $events = DB::table('appointments')->select('id', 'title', 'start', 'end')->get();
+       
+       $formattedEvents = $events->map(function ($event) {
+           return [
+               'id' => $event->id,
+               'title' => $event->title,
+               'start' => $event->start,
+               'end' => $event->end,
+           ];
+       });
+       
+       return response()->json($formattedEvents);
+    }
+
+
 }
 
     

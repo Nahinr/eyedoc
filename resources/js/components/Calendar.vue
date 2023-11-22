@@ -1,44 +1,58 @@
 <template>
   <FullCalendar :options="calendarOptions" />
-  <!-- <button @click="openEventForm">Crear Cita</button> -->
-  <div>
-    <!-- <div v-if="showEventForm"> -->
-      <div class="modal-container" :class="{ 'show': isModalVisible }">
+  <div class="modal-overlay" :class="{ 'show': isModalVisible }" @click="closeModal"></div>
+  <div class="modal-container" :class="{ 'show': isModalVisible }">
+    <div class="container mx-auto p-4">
+      <div class="bg-white rounded shadow-lg p-4 md:p-8">
         <vue-final-modal name="event-form-modal">
+          <div class="grid gap-4">
+            <!-- Barra de búsqueda para filtrar pacientes -->
+            <label for="search" class="block text-sm font-medium text-gray-700">Buscar Paciente</label>
+            <input v-model="searchTerm" @input="filteredPatients" type="text" id="search" placeholder="Buscar paciente" class="w-full p-2 border border-gray-300 rounded-md">
 
-            <label for="patient">Paciente:</label>
-            <select v-model="selectedPatient">
-              <!-- Llena la lista de pacientes desde tu backend -->
-              <option v-for="patient in patients" :key="patient.id" :value="patient.id">{{ patient.nombre_completo }}</option>
-            </select>
+            <!-- Mostrar el resultado de la búsqueda directamente -->
+            <label for="patient" class="block text-sm font-medium text-gray-700">Paciente</label>
+            <div v-if="filteredPatients.length === 0">
+              <p>No se encontraron pacientes</p>
+            </div>
+            <div v-else>
+              <input v-model="filteredPatients[0].nombre_completo" type="text" id="patient" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Paciente">
+            </div>
 
-            <label for="title">Título:</label>
-            <input v-model="eventTitle" type="text" placeholder="Título">
+            <label for="title" class="block text-sm font-medium text-gray-700">Título</label>
+            <input v-model="eventTitle" type="text" placeholder="Título" class="w-full p-2 border border-gray-300 rounded-md">
 
-            <label for="description">Descripción:</label>
-            <textarea v-model="eventDescription" placeholder="Descripción"></textarea>
+            <label for="description" class="block text-sm font-medium text-gray-700">Descripción</label>
+            <textarea v-model="eventDescription" placeholder="Descripción" class="w-full p-2 border border-gray-300 rounded-md"></textarea>
 
-            <label for="date">Inicio</label>
-            <input v-model="eventStartDate" type="datetime-local">
+            <label for="date" class="block text-sm font-medium text-gray-700">Inicio</label>
+            <input v-model="eventStartDate" type="datetime-local" class="w-full p-2 border border-gray-300 rounded-md">
 
-            <label for="date">Fin</label>
-            <input v-model="eventEndDate" type="datetime-local">
+            <label for="date" class="block text-sm font-medium text-gray-700">Fin</label>
+            <input v-model="eventEndDate" type="datetime-local" class="w-full p-2 border border-gray-300 rounded-md">
 
-            <button @click="createEvent">Crear Evento</button>
-            <button @click="closeModal">Cerrar</button>
-
+            <div class="flex justify-end space-x-4">
+              <button @click="createEvent" class="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700">
+                Crear Cita
+              </button>
+              <button @click="closeModal" class="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500">
+                Cerrar
+              </button>
+            </div>
+          </div>
         </vue-final-modal>
+      </div>
     </div>
-   </div>    
-  <!-- </div> -->
+  </div>
 </template>
 
 <script>
-import FullCalendar from '@fullcalendar/vue3';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import esLocale from '@fullcalendar/core/locales/es';
+import FullCalendar from "@fullcalendar/vue3";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import esLocale from "@fullcalendar/core/locales/es";
+import axios from "axios";
 
 export default {
   components: {
@@ -48,96 +62,132 @@ export default {
   data() {
     return {
       calendarOptions: {
-        plugins: [dayGridPlugin, interactionPlugin,timeGridPlugin],
-        initialView: 'dayGridMonth',
+        plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin],
+        initialView: "dayGridMonth",
         headerToolbar: {
-          right: 'prev,next today',
-          center: 'title',
-          left: 'dayGridYear,dayGridMonth,timeGridWeek,timeGridDay',
+          right: "prev,next today",
+          center: "title",
+          left: "dayGridYear,dayGridMonth,timeGridWeek,timeGridDay",
         },
-        locale : esLocale,
+        locale: esLocale,
         events: this.fetchEvents,
         selectable: true,
       },
       showEventForm: false,
-      selectedPatient: null,
-      eventTitle: '',
+      selectedPatient: "",
+      eventTitle: "",
       patients: [],
-      isModalVisible: false
+      isModalVisible: false,
+      searchTerm: "",
+      filteredPatients: [],
     };
   },
 
-  mounted(){
+  computed: {
+    filteredPatients() {
+      return this.patients.filter((patient) =>
+        patient.nombre_completo.toLowerCase().includes(this.searchTerm.toLowerCase())
+      );
+    },
+  },
+
+  mounted() {
     this.fetchPatients();
     this.calendarOptions.dateClick = this.handleDateClick;
   },
-  methods: {   
+
+  methods: {
     handleDateClick() {
       this.selectedPatient = null;
-      this.eventTitle = '';
-      this.eventDescription = '';
-      this.eventStartDate = '';
-      this.eventEndDate = '';
-      // this.showEventForm = true;
-
-      this.isModalVisible= true;
+      this.eventTitle = "";
+      this.eventDescription = "";
+      this.eventStartDate = "";
+      this.eventEndDate = "";
+      this.isModalVisible = true;
     },
 
     fetchPatients() {
-      axios.get('/patientsIndex')
-        .then(response => {
-          console.log('Respuesta de pacientes:', response.data);
+      axios
+        .get("/patientsIndex")
+        .then((response) => {
+          console.log("Respuesta de pacientes:", response.data);
           this.patients = response.data;
         })
-        .catch(error => {
-          console.error('Error al obtener los pacientes:', error);
+        .catch((error) => {
+          console.error("Error al obtener los pacientes:", error);
         });
     },
 
-    openEventForm() {
-      this.showEventForm = true;
-    },
     createEvent() {
-      console.log('Crear evento', this.selectedPatient, this.eventTitle);
-  
-        // Debes enviar esta información al backend para guardarla en la base de datos
-        axios.post('/appointments/create', {
+      axios
+        .post("/appointments/create", {
           patient_id: this.selectedPatient,
           title: this.eventTitle,
           description: this.eventDescription,
           start: new Date(this.eventStartDate).toISOString(),
           end: new Date(this.eventEndDate).toISOString(),
         })
-        .then(response => {
-          console.log('Evento creado con éxito:', response.data);
-          this.showEventForm = false; // Cerrar el formulario después de crear el evento
+        .then((response) => {
+          console.log("Evento creado con éxito:", response.data);
           this.isModalVisible = false;
+          this.fetchEvents();
         })
-        .catch(error => {
-          console.error('Error al crear el evento:', error);
+        .catch((error) => {
+          console.error("Error al crear el evento:", error);
         });
-   },
-    fetchEvents() {
-  
     },
+
+    fetchEvents() {
+      axios.get('/appointments/show')
+      .then(response => {
+        const events = response.data;
+
+        // Actualiza los eventos del calendario
+        this.calendarOptions.events = events;
+
+        // También puedes intentar recargar el calendario después de obtener los eventos
+        this.$refs.calendarRef.getApi().refetchEvents();
+
+      })
+      .catch(error => {
+        console.error('Error al obtener los eventos:', error);
+      });
+    },
+
     closeModal() {
       this.isModalVisible = false;
-    }
+    },
+
   },
 };
 </script>
 
 <style>
-  .modal-container {
-  position: fixed; /* O ajusta según sea necesario */
-  top: 50%; /* Ajusta según sea necesario */
-  left: 50%; /* Ajusta según sea necesario */
-  transform: translate(-50%, -50%); /* Centra el modal */
-  z-index: 9999; /* Ajusta aquí sea necesario */
+.modal-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
   display: none;
-  }
+}
 
-  .modal-container.show {
+.modal-container.show {
   display: block;
-  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+  display: none;
+}
+
+.modal-overlay.show {
+  display: block;
+}
 </style>
