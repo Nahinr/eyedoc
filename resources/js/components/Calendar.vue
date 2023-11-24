@@ -1,41 +1,91 @@
 <template>
   <FullCalendar :options="calendarOptions" />
-  <div class="modal-overlay" :class="{ 'show': isModalVisible }" @click="closeModal"></div>
-  <div class="modal-container" :class="{ 'show': isModalVisible }">
+  <div class="modal-overlay" :class="{ show: isModalVisible }" @click="closeModal"></div>
+  <div class="modal-container" :class="{ show: isModalVisible }">
     <div class="container mx-auto p-4">
       <div class="bg-white rounded shadow-lg p-4 md:p-8">
         <vue-final-modal name="event-form-modal">
           <div class="grid gap-4">
             <!-- Barra de búsqueda para filtrar pacientes -->
-            <label for="search" class="block text-sm font-medium text-gray-700">Buscar Paciente</label>
-            <input v-model="searchTerm" @input="filteredPatients" type="text" id="search" placeholder="Buscar paciente" class="w-full p-2 border border-gray-300 rounded-md">
+            <label for="search" class="block text-sm font-medium text-gray-700"
+              >Buscar Paciente</label
+            >
+            <input
+              v-model="searchTerm"
+              type="text"
+              id="search"
+              placeholder="Buscar paciente"
+              class="w-full p-2 border border-gray-300 rounded-md"
+            />
 
             <!-- Mostrar el resultado de la búsqueda directamente -->
-            <label for="patient" class="block text-sm font-medium text-gray-700">Paciente</label>
-            <div v-if="filteredPatients.length === 0">
-              <p>No se encontraron pacientes</p>
+            <label for="patient" class="block text-sm font-medium text-gray-700"
+              >Paciente</label
+            >
+            <div v-if="filteredPatients.length > 0">
+              <ul>
+                <li
+                  v-for="patient in filteredPatients"
+                  :key="patient.id"
+                  @click="selectPatient(patient)"
+                >
+                  {{ patient.nombre_completo }}
+                </li>
+              </ul>
             </div>
-            <div v-else>
-              <input v-model="selectedPatient.nombre_completo" type="text" id="patient" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Paciente" @change ="selectPatient(filteredPatients[0])">
-            </div>
 
-            <label for="title" class="block text-sm font-medium text-gray-700">Título</label>
-            <input v-model="eventTitle" type="text" placeholder="Título" class="w-full p-2 border border-gray-300 rounded-md">
+            <label for="title" class="block text-sm font-medium text-gray-700"
+              >Cita para:
+            </label>
+            <p v-if="selectedPatient.id != null">Por favor seleccione paciente</p>
+            <p v-else>{{ selectedPatient.nombre_completo }}</p>
+            <label for="title" class="block text-sm font-medium text-gray-700"
+              >Título</label
+            >
 
-            <label for="description" class="block text-sm font-medium text-gray-700">Descripción</label>
-            <textarea v-model="eventDescription" placeholder="Descripción" class="w-full p-2 border border-gray-300 rounded-md"></textarea>
+            <input
+              v-model="eventTitle"
+              type="text"
+              placeholder="Título"
+              class="w-full p-2 border border-gray-300 rounded-md"
+            />
 
-            <label for="date" class="block text-sm font-medium text-gray-700">Inicio</label>
-            <input v-model="eventStartDate" type="datetime-local" class="w-full p-2 border border-gray-300 rounded-md">
+            <label for="description" class="block text-sm font-medium text-gray-700"
+              >Descripción</label
+            >
+            <textarea
+              v-model="eventDescription"
+              placeholder="Descripción"
+              class="w-full p-2 border border-gray-300 rounded-md"
+            ></textarea>
+
+            <label for="date" class="block text-sm font-medium text-gray-700"
+              >Inicio</label
+            >
+            <input
+              v-model="eventStartDate"
+              type="datetime-local"
+              class="w-full p-2 border border-gray-300 rounded-md"
+            />
 
             <label for="date" class="block text-sm font-medium text-gray-700">Fin</label>
-            <input v-model="eventEndDate" type="datetime-local" class="w-full p-2 border border-gray-300 rounded-md">
+            <input
+              v-model="eventEndDate"
+              type="datetime-local"
+              class="w-full p-2 border border-gray-300 rounded-md"
+            />
 
             <div class="flex justify-end space-x-4">
-              <button @click="createEvent" class="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700">
+              <button
+                @click="createEvent"
+                class="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700"
+              >
                 Crear Cita
               </button>
-              <button @click="closeModal" class="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500">
+              <button
+                @click="closeModal"
+                class="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500"
+              >
                 Cerrar
               </button>
             </div>
@@ -74,10 +124,7 @@ export default {
         selectable: true,
       },
       showEventForm: false,
-      selectedPatient: {
-        id: "",
-        nombre_completo: "",
-      },
+      selectedPatient: {},
       eventTitle: "",
       patients: [],
       isModalVisible: false,
@@ -87,9 +134,11 @@ export default {
 
   computed: {
     filteredPatients() {
-      return this.patients.filter((patient) =>
+      if (this.searchTerm === "") return [];
+      let results = this.patients.filter((patient) =>
         patient.nombre_completo.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
+      return results;
     },
   },
 
@@ -107,13 +156,13 @@ export default {
       this.eventEndDate = "";
       this.isModalVisible = true;
     },
-
     fetchPatients() {
       axios
         .get("/patientsIndex")
         .then((response) => {
           console.log("Respuesta de pacientes:", response.data);
           this.patients = response.data;
+          console.log("Pacientes:", this.patients);
         })
         .catch((error) => {
           console.error("Error al obtener los pacientes:", error);
@@ -121,7 +170,7 @@ export default {
     },
 
     createEvent() {
-      if (!this.selectedPatient.id) {
+      if (!this.selectedPatient.id || this.start === "" || this.end === "") {
         // Puedes mostrar un mensaje de error o realizar alguna acción específica
         console.error("Por favor, selecciona un paciente antes de crear el evento.");
         return;
@@ -167,6 +216,7 @@ export default {
 
     selectPatient(patient) {
       this.selectedPatient = patient;
+      this.searchTerm = "";
     },
   },
 };
