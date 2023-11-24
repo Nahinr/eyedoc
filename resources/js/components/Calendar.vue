@@ -16,7 +16,7 @@
               <p>No se encontraron pacientes</p>
             </div>
             <div v-else>
-              <input v-model="filteredPatients[0].nombre_completo" type="text" id="patient" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Paciente">
+              <input v-model="selectedPatient.nombre_completo" type="text" id="patient" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Paciente" @change ="selectPatient(filteredPatients[0])">
             </div>
 
             <label for="title" class="block text-sm font-medium text-gray-700">Título</label>
@@ -74,12 +74,14 @@ export default {
         selectable: true,
       },
       showEventForm: false,
-      selectedPatient: "",
+      selectedPatient: {
+        id: "",
+        nombre_completo: "",
+      },
       eventTitle: "",
       patients: [],
       isModalVisible: false,
       searchTerm: "",
-      filteredPatients: [],
     };
   },
 
@@ -98,7 +100,7 @@ export default {
 
   methods: {
     handleDateClick() {
-      this.selectedPatient = null;
+      this.selectedPatient = { id: "", nombre_completo: "" };
       this.eventTitle = "";
       this.eventDescription = "";
       this.eventStartDate = "";
@@ -119,9 +121,14 @@ export default {
     },
 
     createEvent() {
+      if (!this.selectedPatient.id) {
+        // Puedes mostrar un mensaje de error o realizar alguna acción específica
+        console.error("Por favor, selecciona un paciente antes de crear el evento.");
+        return;
+      }
       axios
         .post("/appointments/create", {
-          patient_id: this.selectedPatient,
+          patient_id: this.selectedPatient.id,
           title: this.eventTitle,
           description: this.eventDescription,
           start: new Date(this.eventStartDate).toISOString(),
@@ -138,26 +145,29 @@ export default {
     },
 
     fetchEvents() {
-      axios.get('/appointments/show')
-      .then(response => {
-        const events = response.data;
+      axios
+        .get("/appointments/show")
+        .then((response) => {
+          const events = response.data;
 
-        // Actualiza los eventos del calendario
-        this.calendarOptions.events = events;
+          // Actualiza los eventos del calendario
+          this.calendarOptions.events = events;
 
-        // También puedes intentar recargar el calendario después de obtener los eventos
-        this.$refs.calendarRef.getApi().refetchEvents();
-
-      })
-      .catch(error => {
-        console.error('Error al obtener los eventos:', error);
-      });
+          // También puedes intentar recargar el calendario después de obtener los eventos
+          this.$refs.calendarRef.getApi().refetchEvents();
+        })
+        .catch((error) => {
+          console.error("Error al obtener los eventos:", error);
+        });
     },
 
     closeModal() {
       this.isModalVisible = false;
     },
 
+    selectPatient(patient) {
+      this.selectedPatient = patient;
+    },
   },
 };
 </script>
